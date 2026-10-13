@@ -47,6 +47,8 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--on);font:400 1re
 .hero-title:focus{outline:none}
 .hero-title .u{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.12em;text-decoration-color:var(--rule);text-decoration-skip-ink:none}
 .hero-sub{margin:14px 0 0;max-width:44ch;font-size:1.0625rem;line-height:1.45;color:var(--on-soft)}
+.hero-sub.is-small{max-width:52ch;font-size:.9375rem;line-height:1.5}
+.hero-kicker{position:relative;margin:0 0 6px;font-size:.9375rem;font-weight:600;color:var(--on-soft)}
 .hero{margin-bottom:24px}
 .progress-row{display:flex;align-items:center;gap:12px;margin:22px 0 0}
 .progress{flex:1;display:flex;gap:4px}
@@ -60,6 +62,8 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--on);font:400 1re
 .panel{margin:0;padding:22px 16px;border-radius:var(--r-panel);background:var(--navy);color:#fff}
 .panel + .panel{margin-top:14px}
 .panel h2{margin:0 0 18px;font-size:1.375rem;font-weight:700;line-height:1.2}
+.panel h2:has(+ .panel-lead){margin-bottom:6px}
+.panel-lead{margin:0 0 20px;color:var(--mute)}
 fieldset{min-width:0;margin:0;padding:0;border:0}
 
 .field{margin-bottom:24px}
@@ -116,8 +120,8 @@ fieldset{min-width:0;margin:0;padding:0;border:0}
 .guide[open] summary::after{margin-top:6px;transform:rotate(-135deg)}
 .guide summary:focus-visible{outline:3px solid #fff;outline-offset:-4px}
 .guide-body{padding:0 16px 20px}
-.guide-q{margin:0 0 10px;font-weight:600}
-.guide-q span{font-weight:400;color:var(--mute)}
+.guide-q{margin:0 0 4px;font-weight:700}
+.guide-intro{margin:0 0 12px;color:var(--mute)}
 .legend{margin:0 0 20px;padding:0;list-style:none;display:grid;gap:10px}
 .legend:last-child{margin-bottom:0}
 .legend li{display:grid;grid-template-columns:28px 1fr;gap:0 10px;align-items:start}
@@ -180,7 +184,7 @@ fieldset{min-width:0;margin:0;padding:0;border:0}
       <span class="hero-num" id="hero-num" aria-hidden="true"></span>
       <div class="hero-art" id="hero-art" aria-hidden="true"></div>
     </div>
-    <p class="sr-only" id="hero-kicker"></p>
+    <p class="hero-kicker" id="hero-kicker"></p>
     <h1 class="hero-title" id="hero-title" tabindex="-1"><span class="u"></span></h1>
     <p class="hero-sub" id="hero-sub"></p>
     <div class="progress-row" id="progress-row">
@@ -203,51 +207,92 @@ fieldset{min-width:0;margin:0;padding:0;border:0}
 
 const CFG = {
   interactiveId: "validacion-curso",
-  interactiveVersion: "2026-10-09",
+  interactiveVersion: "2026-10-13",
   endpoint: "https://script.google.com/macros/s/AKfycbzcbNfpxagVRasksXznrpbCaSvbtGL9vyqNOdDsu25oeM81FNKL-7UrdpUYISaMGtGsfA/exec",   // Vacío = modo prueba.
   opaqueFallback: false, // true solo para destinos sin CORS: envía sin poder confirmar la entrega
   locale: "es-CO",
   allowRestart: true,    // false en producción: una respuesta por dispositivo
-  title: "Validación de contenidos del curso",
-  intro: "Para cada clase indique qué tan relevante es y cómo debería abordarse.",
+  title: "Validación del curso de gestión de pérdidas de agua",
+  heading: "Curso de gestión de pérdidas de agua",
+  intro: "Como parte del público al que va dirigido este curso sobre pérdidas técnicas y comerciales, tu experiencia nos ayuda a definir qué tan relevante es cada clase y cómo debería abordarse.",
 };
 
 // hue: teal | orange | violet | red.  icon: clave de ICONS.
 const ROLES = [
-  { value: "alta_direccion", label: "Alta dirección",          hint: "Gerencia general, presidencia", hue: "teal",   icon: "corona" },
-  { value: "direccion_area", label: "Dirección de área",       hint: "Dirección, subgerencia",        hue: "orange", icon: "organigrama" },
-  { value: "jefatura",       label: "Jefatura o coordinación", hint: "Jefe, coordinador, supervisor", hue: "violet", icon: "equipo" },
-  { value: "profesional",    label: "Profesional o técnico",   hint: "Ingeniero, analista, operador", hue: "red",    icon: "maletin" },
+  { value: "direccion",           label: "Dirección",           hue: "teal",   icon: "corona" },
+  { value: "planeacion",          label: "Planeación",          hue: "orange", icon: "calendario" },
+  { value: "coordinacion",        label: "Coordinación",        hue: "violet", icon: "equipo" },
+  { value: "profesional_tecnico", label: "Profesional técnico", hue: "red",    icon: "maletin" },
 ];
 
+// Una sola respuesta por pregunta en cada clase.
 const RELEVANCIA = {
-  key: "A", title: "Relevancia", prompt: "¿en qué categoría lo ubica?",
+  key: "A", title: "Relevancia",
+  intro: "Desde tu rol en la organización, ¿qué tan relevante es cada clase? Ubícala en una de estas categorías:",
   options: [
-    { value: "obligatorio", label: "Obligatorio", hue: "red",    icon: "exclamacion" },
-    { value: "importante",  label: "Importante",  hue: "orange", icon: "bandera" },
-    { value: "deseable",    label: "Deseable",    hue: "teal",   icon: "destello" },
+    { value: "obligatorio", label: "Obligatorio", hue: "red",    icon: "exclamacion", help: "¿Lo exige la regulación, es indispensable para operar o sin este tema no se entiende el resto del curso?" },
+    { value: "importante",  label: "Importante",  hue: "orange", icon: "bandera",     help: "¿El equipo del prestador lo aplica en su operación diaria?" },
+    { value: "deseable",    label: "Deseable",    hue: "teal",   icon: "destello",    help: "¿Complementa o enriquece lo aprendido, aunque el objetivo se puede cumplir sin él?" },
   ],
 };
 
 const ENFOQUE = {
-  key: "B", title: "Enfoque", prompt: "¿Cómo debe abordarse?", min: 1,
+  key: "B", title: "Enfoque",
+  intro: "Según tu conocimiento del sector, ¿cómo debería abordarse cada clase en el curso? Elige uno de estos enfoques:",
   options: [
-    { value: "descriptivo",  label: "Descriptivo",  hue: "violet", icon: "libro",    help: "¿Basta con que el participante conozca y entienda el tema?" },
-    { value: "practico",     label: "Práctico",     hue: "violet", icon: "herramienta", help: "¿El participante necesita saber hacerlo con una herramienta, ejercicio, plantilla o cálculo?" },
-    { value: "experiencial", label: "Experiencial", hue: "violet", icon: "edificio", help: "¿El participante debe aplicarlo a su propia empresa, con sus datos o casos reales?" },
+    { value: "descriptivo",  label: "Descriptivo",  hue: "violet", icon: "libro",       help: "¿Basta con que el participante conozca y entienda el tema?" },
+    { value: "practico",     label: "Práctico",     hue: "violet", icon: "herramienta", help: "¿El participante necesita saber hacerlo con una herramienta, un ejercicio, una plantilla o un cálculo?" },
+    { value: "experiencial", label: "Experiencial", hue: "violet", icon: "edificio",    help: "¿El participante debe aplicarlo en su propia organización, con sus datos o casos reales?" },
   ],
 };
 
-// Una entrada por sección; cada texto de "classes" es el nombre de una clase. art: clave de ART.
+// Objetivo de cada módulo; se muestra arriba de sus secciones.
+const MODULES = [
+  "Comprender las pérdidas de agua: su impacto técnico, financiero y ambiental, su relación con el desempeño del prestador, la seguridad hídrica y la resiliencia de los sistemas, el marco regulatorio aplicable y la estructura del balance hídrico IWA como base para medirlas y gestionarlas.",
+  "Evaluar y estructurar la información técnica y comercial necesaria para medir, diagnosticar y gestionar las pérdidas, reducir la incertidumbre del balance hídrico y tomar decisiones sobre una base confiable.",
+  "Aplicar metodologías técnicas y comerciales para identificar, priorizar y reducir las pérdidas del sistema.",
+  "Comprender el nivel económico de pérdidas (NEP) y aplicar criterios de costo-beneficio para evaluar y priorizar las alternativas de reducción.",
+];
+
+// Una entrada por sección; module: 1 a 4; cada texto de "classes" es el nombre de una clase. art: clave de ART.
 const SECTIONS = [
-  { title: "Marco conceptual y regulatorio",                art: "balanza",      classes: ["Clase 1", "Clase 2", "Clase 3"] },
-  { title: "Balance hídrico IWA",                           art: "gota",         classes: ["Clase 1", "Clase 2", "Clase 3", "Clase 4"] },
-  { title: "Diagnóstico técnico del sistema",               art: "red",          classes: ["Clase 1", "Clase 2", "Clase 3", "Clase 4"] },
-  { title: "Diagnóstico comercial y de medición",           art: "medidor",      classes: ["Clase 1", "Clase 2", "Clase 3", "Clase 4"] },
-  { title: "Gestión de pérdidas técnicas",                  art: "fuga",         classes: ["Clase 1", "Clase 2", "Clase 3", "Clase 4"] },
-  { title: "Gestión de pérdidas comerciales",               art: "grifo",        classes: ["Clase 1", "Clase 2", "Clase 3"] },
-  { title: "Análisis económico de las pérdidas",            art: "grafica",      classes: ["Clase 1", "Clase 2", "Clase 3"] },
-  { title: "Formulación del Plan de Reducción de Pérdidas", art: "plan",         classes: ["Clase 1", "Clase 2", "Clase 3", "Clase 4"] },
+  { module: 1, title: "Marco conceptual y regulatorio", art: "balanza", classes: [
+    "¿Qué son las pérdidas de agua y por qué importan?",
+    "Pérdidas técnicas frente a pérdidas comerciales",
+    "Marco regulatorio de la gestión de pérdidas y su aplicación en Colombia"] },
+  { module: 1, title: "Balance hídrico IWA", art: "gota", classes: [
+    "Estructura del balance hídrico IWA",
+    "Construcción práctica del balance hídrico: datos y estimaciones",
+    "Fuentes de error e incertidumbre del balance",
+    "Indicadores clave de pérdidas y benchmarking (ILI, ANF, m³/conexión/día, % ANC)"] },
+  { module: 2, title: "Diagnóstico técnico del sistema", art: "red", classes: [
+    "Catastro de redes y calidad de la información",
+    "Sectorización hidráulica (DMA)",
+    "Macromedición y control de los volúmenes de entrada",
+    "Modelación hidráulica y plano de presiones"] },
+  { module: 2, title: "Diagnóstico comercial y de medición", art: "medidor", classes: [
+    "Base de datos de usuarios y patrones de consumo",
+    "Micromedición efectiva",
+    "Subregistro de medidores y bancos de prueba",
+    "Diagnóstico integral del sistema de medición"] },
+  { module: 3, title: "Gestión de pérdidas técnicas", art: "fuga", classes: [
+    "Análisis del caudal mínimo nocturno",
+    "Pruebas por pasos (step testing) y detección de fugas",
+    "Gestión activa de presiones",
+    "Estrategia 4RI (IWA)"] },
+  { module: 3, title: "Gestión de pérdidas comerciales", art: "grifo", classes: [
+    "Conexiones ilegales y fraude",
+    "Errores de lectura y facturación",
+    "Alineación entre sectores hidráulicos y sectores comerciales"] },
+  { module: 4, title: "Análisis económico de las pérdidas", art: "grafica", classes: [
+    "Costo del agua perdida",
+    "Nivel económico de pérdidas (NEP)",
+    "Curva costo-beneficio de la reducción de pérdidas"] },
+  { module: 4, title: "Formulación del plan de reducción de pérdidas", art: "plan", classes: [
+    "Priorización de inversiones",
+    "Metas, cronograma e indicadores",
+    "Gobernanza y sostenibilidad del programa",
+    "Aplicación regulatoria en Colombia (CRA)"] },
 ];
 
 const TONES = ["purple", "coral", "mint"];   // el fondo rota por paso, como las casillas del afiche
@@ -312,6 +357,7 @@ const ICONS = {
   edificio:    `<path d="M4 21V8l8-4v17M12 10h8v11M2.5 21h19M7.5 11v0M7.5 15v0M16 14v0M16 17.5v0"/>`,
   corona:      `<path d="M4 18h16M4.5 15l-1.5-8 5 4 4-6 4 6 5-4-1.5 8z"/>`,
   organigrama: `<rect x="9" y="3.5" width="6" height="5" rx="1"/><rect x="3" y="15.5" width="6" height="5" rx="1"/><rect x="15" y="15.5" width="6" height="5" rx="1"/><path d="M12 8.5V12M6 15.5V12h12v3.5"/>`,
+  calendario:  `<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/>`,
   equipo:      `<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-3.5 2.6-5 5.5-5s5 1.5 5.5 5"/><circle cx="17" cy="9" r="2.3"/><path d="M16.5 14c2.4 0 3.8 1.3 4.2 4"/>`,
   maletin:     `<rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M9 7.5V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5v2M3 13h18"/>`,
 };
@@ -440,42 +486,42 @@ function buildDatos() {
 
   const node = h("section", { class: "screen", "data-screen": "datos", "aria-labelledby": "hero-title" },
     h("div", { class: "panel" },
-      h("h2", { text: "Sus datos" }),
-      h("div", { class: "field" }, h("label", { for: "f-company", text: "Empresa" }), company, eCompany),
+      h("h2", { text: "Tus datos" }),
+      h("p", { class: "panel-lead", text: "Cuéntanos a qué organización perteneces y cuál es tu rol en ella." }),
+      h("div", { class: "field" }, h("label", { for: "f-company", text: "Organización" }), company, eCompany),
       h("fieldset", { class: "field", "aria-describedby": "e-role" },
-        h("legend", { text: "Nivel del cargo" }),
-        h("div", { class: "opts is-roles" }, ROLES.map((o, i) => optCard("radio", roleInputs[i], o, o.hint))),
+        h("legend", { text: "Rol" }),
+        h("div", { class: "opts is-roles" }, ROLES.map((o, i) => optCard("radio", roleInputs[i], o))),
         eRole),
       h("div", { class: "field" }, h("label", { for: "f-email", text: "Correo electrónico" }), email, eEmail)));
 
   function validate() {
     const bad = [];
     if (r.company.trim().length < 2) {
-      setErr(eCompany, "Escriba el nombre de su empresa."); company.setAttribute("aria-invalid", "true"); bad.push(company);
+      setErr(eCompany, "Escribe el nombre de tu organización."); company.setAttribute("aria-invalid", "true"); bad.push(company);
     }
-    if (!r.role) { setErr(eRole, "Seleccione su nivel de cargo."); bad.push(roleInputs[0]); }
+    if (!r.role) { setErr(eRole, "Selecciona tu rol."); bad.push(roleInputs[0]); }
     const e = r.email.trim();
     if (!EMAIL_RE.test(e)) {
-      setErr(eEmail, e ? "Revise el correo: parece incompleto." : "Escriba su correo electrónico.");
+      setErr(eEmail, e ? "Revisa el correo: parece incompleto." : "Escribe tu correo electrónico.");
       email.setAttribute("aria-invalid", "true"); bad.push(email);
     }
     return { focus: bad[0] || null, message: "" };
   }
-  const hero = { num: "", art: "datos", kicker: "", title: CFG.title,
+  const hero = { num: "", art: "datos", kicker: "", title: CFG.heading,
     sub: `${CFG.intro} Son ${SECTIONS.length} secciones y ${ITEMS.length} clases.` };
   return { node, hero, validate };
 }
 
 function buildGuide(open) {
-  const legend = (q, withHelp) => h("ul", { class: "legend" }, q.options.map(o =>
-    h("li", { style: `--hue:var(--${o.hue})` }, icon("dot", o.icon), h("b", { text: o.label }), withHelp && h("span", { class: "t", text: o.help }))));
+  const block = q => [
+    h("p", { class: "guide-q", text: `${q.key}. ${q.title}` }),
+    h("p", { class: "guide-intro", text: q.intro }),
+    h("ul", { class: "legend" }, q.options.map(o =>
+      h("li", { style: `--hue:var(--${o.hue})` }, icon("dot", o.icon), h("b", { text: o.label }), h("span", { class: "t", text: o.help }))))];
   return h("details", { class: "panel guide", open },
     h("summary", { text: "Cómo responder" }),
-    h("div", { class: "guide-body" },
-      h("p", { class: "guide-q" }, `${RELEVANCIA.key}. ${RELEVANCIA.title}: ${RELEVANCIA.prompt} `, h("span", { text: "Elija una." })),
-      legend(RELEVANCIA, false),
-      h("p", { class: "guide-q" }, `${ENFOQUE.key}. ${ENFOQUE.title}: ${ENFOQUE.prompt} `, h("span", { text: "Puede marcar varios." })),
-      legend(ENFOQUE, true)));
+    h("div", { class: "guide-body" }, block(RELEVANCIA), block(ENFOQUE)));
 }
 
 function buildSection(sec, si) {
@@ -496,10 +542,10 @@ function buildSection(sec, si) {
       return input;
     });
     const boxes = ENFOQUE.options.map((o, i) => {
-      const input = h("input", { type: "checkbox", name: `${it.id}_B`, value: o.value, id: `${it.id}-b${i}` });
+      const input = h("input", { type: "radio", name: `${it.id}_B`, value: o.value, id: `${it.id}-b${i}` });
       input.checked = a.b.includes(o.value);
       input.addEventListener("change", () => {
-        a.b = ENFOQUE.options.filter((_, k) => boxes[k].checked).map(x => x.value);   // siempre en el orden de las opciones
+        a.b = [o.value];   // se guarda como lista de un elemento: la hoja y el reporte no cambian
         a.bN++; a.bAt = new Date().toISOString(); save(); setErr(eB); refresh();
       });
       return input;
@@ -512,15 +558,15 @@ function buildSection(sec, si) {
         h("div", { class: "opts" }, RELEVANCIA.options.map((o, i) => optCard("radio", radios[i], o))),
         eA),
       h("fieldset", { class: "grp", "aria-describedby": eB.id },
-        h("legend", {}, `${ENFOQUE.key}. ${ENFOQUE.title}`, h("span", { class: "sr-only", text: ` de ${it.name}.` }), h("span", { class: "hint", text: "Puede marcar varios" })),
-        h("div", { class: "opts" }, ENFOQUE.options.map((o, i) => optCard("check", boxes[i], o))),
+        h("legend", {}, `${ENFOQUE.key}. ${ENFOQUE.title}`, h("span", { class: "sr-only", text: ` de ${it.name}` })),
+        h("div", { class: "opts" }, ENFOQUE.options.map((o, i) => optCard("radio", boxes[i], o))),
         eB));
 
-    function refresh() { setErr(summaryErr); if (a.a && a.b.length >= ENFOQUE.min) card.classList.remove("has-error"); }
+    function refresh() { setErr(summaryErr); if (a.a && a.b.length) card.classList.remove("has-error"); }
     checks.push(() => {
       let first = null;
-      if (!a.a) { setErr(eA, "Elija una categoría."); first = radios[0]; }
-      if (a.b.length < ENFOQUE.min) { setErr(eB, "Marque al menos un enfoque."); first = first || boxes[0]; }
+      if (!a.a) { setErr(eA, "Elige una categoría."); first = radios[0]; }
+      if (!a.b.length) { setErr(eB, "Elige un enfoque."); first = first || boxes[0]; }
       card.classList.toggle("has-error", !!first);
       return first;
     });
@@ -534,8 +580,8 @@ function buildSection(sec, si) {
     const n = bad.length;
     return { focus: bad[0] || null, message: n ? (n === 1 ? "Falta responder 1 clase de esta sección." : `Faltan respuestas en ${n} clases de esta sección.`) : "" };
   }
-  const hero = { num: String(si + 1), art: sec.art, kicker: `Sección ${si + 1} de ${SECTIONS.length}`, title: sec.title,
-    sub: `${items.length} clases. Indique la relevancia y el enfoque de cada una.` };
+  const hero = { num: String(si + 1), art: sec.art, kicker: `Módulo ${sec.module} de ${MODULES.length}`, kickerSr: `Sección ${si + 1} de ${SECTIONS.length}`,
+    title: sec.title, sub: MODULES[sec.module - 1], small: true };
   return { node, hero, validate };
 }
 
@@ -566,7 +612,9 @@ function setHero(tone, hero, showBrand) {
   $("theme-color").setAttribute("content", TONE_HEX[tone]);
   $("brand").textContent = CFG.title; $("brand").hidden = !showBrand;
   $("hero-num").textContent = hero.num; $("hero-num").hidden = !hero.num;
-  $("hero-kicker").textContent = hero.kicker; $("hero-kicker").hidden = !hero.kicker;
+  $("hero-kicker").replaceChildren(hero.kicker || "", hero.kickerSr ? h("span", { class: "sr-only", text: `, ${hero.kickerSr}` }) : "");
+  $("hero-kicker").hidden = !hero.kicker;
+  $("hero-sub").classList.toggle("is-small", !!hero.small);
   heroTitle.firstElementChild.textContent = hero.title;
   $("hero-sub").textContent = hero.sub; $("hero-sub").hidden = !hero.sub;
   const art = $("hero-art"); art.textContent = "";
@@ -714,20 +762,20 @@ function showFin(status, payload) {
   fin.body.textContent = "";
 
   if (status === "pending") {
-    setHero("purple", { num: "", art: "pendiente", kicker: "", title: "Sus respuestas quedaron guardadas", sub: "" }, true);
+    setHero("purple", { num: "", art: "pendiente", kicker: "", title: "Tus respuestas quedaron guardadas", sub: "" }, true);
     const msg = h("p", { "aria-live": "polite", text: "No fue posible enviarlas en este momento. Están guardadas en este dispositivo y se enviarán solas cuando vuelva la conexión." });
     const retry = h("button", { type: "button", class: "btn btn-primary", id: "btn-retry", text: "Reintentar ahora" });
     retry.addEventListener("click", async () => {
       retry.disabled = true; retry.textContent = "Enviando…";
       if (await flush()) showFin("sent", payload);
-      else { retry.disabled = false; retry.textContent = "Reintentar ahora"; msg.textContent = "Todavía no hay conexión. Sus respuestas siguen guardadas en este dispositivo."; }
+      else { retry.disabled = false; retry.textContent = "Reintentar ahora"; msg.textContent = "Todavía no hay conexión. Tus respuestas siguen guardadas en este dispositivo."; }
     });
     fin.body.append(msg, h("div", { class: "nav" }, retry));
     fin.pendingPayload = payload;
   } else {
     fin.pendingPayload = null;
     setHero("purple", { num: "", art: "fin", kicker: "", title: "Gracias", sub: "" }, true);
-    fin.body.append(h("p", { text: status === "sent" ? "Sus respuestas quedaron registradas." : "Recorrido completo." }));
+    fin.body.append(h("p", { text: status === "sent" ? "Tus respuestas quedaron registradas." : "Recorrido completo." }));
     if (status === "test") {
       fin.body.append(
         h("p", { class: "note", text: "Modo prueba: no se envió nada. Esto es lo que llegaría a la hoja:" }),
