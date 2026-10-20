@@ -74,6 +74,16 @@ fieldset{min-width:0;margin:0;padding:0;border:0}
 .field input[type=text]:focus-visible,.field input[type=email]:focus-visible{outline:3px solid rgba(0,240,205,.4);outline-offset:0;border-color:var(--mint)}
 .field input[aria-invalid=true]{border-color:var(--err)}
 .field input:-webkit-autofill{-webkit-text-fill-color:#fff;box-shadow:0 0 0 100px var(--navy-2) inset;caret-color:var(--mint)}
+.field textarea{display:block;width:100%;min-height:168px;padding:14px 16px;border:2px solid var(--navy-line);border-radius:var(--r-ctl);
+  background:var(--navy-2);color:#fff;font:inherit;line-height:1.5;caret-color:var(--mint);resize:vertical}
+.field textarea:focus-visible{outline:3px solid rgba(0,240,205,.4);outline-offset:0;border-color:var(--mint)}
+.field textarea[aria-invalid=true]{border-color:var(--err)}
+.opt-tag{font-weight:400;color:var(--mute)}
+.field-help{margin:-2px 0 10px;color:var(--mute);font-size:.9375rem}
+.panel.open-q{margin-top:14px}
+.open-q .field > label{font-weight:600;line-height:1.4;margin-bottom:12px}
+.open-k{display:block;margin-bottom:4px;font-size:.9375rem;font-weight:700;color:var(--yellow)}
+.count{margin:8px 0 0;font-size:.875rem;color:var(--mute);text-align:right;font-variant-numeric:tabular-nums}
 
 /* ── Opciones: círculo con ícono, cabeza de color, base oscura con la marca ── */
 .opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -207,7 +217,7 @@ fieldset{min-width:0;margin:0;padding:0;border:0}
 
 const CFG = {
   interactiveId: "validacion-curso",
-  interactiveVersion: "2026-10-13",
+  interactiveVersion: "2026-10-20",
   endpoint: "https://script.google.com/macros/s/AKfycbzcbNfpxagVRasksXznrpbCaSvbtGL9vyqNOdDsu25oeM81FNKL-7UrdpUYISaMGtGsfA/exec",   // Vacío = modo prueba.
   opaqueFallback: false, // true solo para destinos sin CORS: envía sin poder confirmar la entrega
   locale: "es-CO",
@@ -220,9 +230,9 @@ const CFG = {
 // hue: teal | orange | violet | red.  icon: clave de ICONS.
 const ROLES = [
   { value: "direccion",           label: "Dirección",           hue: "teal",   icon: "corona" },
-  { value: "planeacion",          label: "Planeación",          hue: "orange", icon: "calendario" },
+  { value: "lider",               label: "Líder",               hue: "orange", icon: "lider" },
   { value: "coordinacion",        label: "Coordinación",        hue: "violet", icon: "equipo" },
-  { value: "profesional_tecnico", label: "Profesional técnico", hue: "red",    icon: "maletin" },
+  { value: "profesional_tecnico", label: "Profesional/Técnico", hue: "red",    icon: "maletin" },
 ];
 
 // Una sola respuesta por pregunta en cada clase.
@@ -244,6 +254,14 @@ const ENFOQUE = {
     { value: "practico",     label: "Práctico",     hue: "violet", icon: "herramienta", help: "¿El participante necesita saber hacerlo con una herramienta, un ejercicio, una plantilla o un cálculo?" },
     { value: "experiencial", label: "Experiencial", hue: "violet", icon: "edificio",    help: "¿El participante debe aplicarlo en su propia organización, con sus datos o casos reales?" },
   ],
+};
+
+// Pregunta abierta: se repite al final de cada sección. Cada respuesta llega a la pestaña "Preguntas abiertas" de la hoja.
+const OPEN = {
+  id: "abierta",
+  prompt: "Teniendo en cuenta el enfoque introductorio del curso de gestión de pérdidas de agua, ¿qué contenido clave consideras importante reforzar para facilitar la comprensión de los contenidos por parte de los participantes?",
+  required: false,       // true = obligatoria
+  maxLength: 2000,
 };
 
 // Objetivo de cada módulo; se muestra arriba de sus secciones.
@@ -357,7 +375,7 @@ const ICONS = {
   edificio:    `<path d="M4 21V8l8-4v17M12 10h8v11M2.5 21h19M7.5 11v0M7.5 15v0M16 14v0M16 17.5v0"/>`,
   corona:      `<path d="M4 18h16M4.5 15l-1.5-8 5 4 4-6 4 6 5-4-1.5 8z"/>`,
   organigrama: `<rect x="9" y="3.5" width="6" height="5" rx="1"/><rect x="3" y="15.5" width="6" height="5" rx="1"/><rect x="15" y="15.5" width="6" height="5" rx="1"/><path d="M12 8.5V12M6 15.5V12h12v3.5"/>`,
-  calendario:  `<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/>`,
+  lider:       `<circle cx="10" cy="8" r="3.2"/><path d="M3.5 20c.6-4 3-6 6.5-6 1.4 0 2.6.3 3.6.9M17.5 12.5v8M17.5 13h4l-1.3 1.8 1.3 1.8h-4"/>`,
   equipo:      `<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-3.5 2.6-5 5.5-5s5 1.5 5.5 5"/><circle cx="17" cy="9" r="2.3"/><path d="M16.5 14c2.4 0 3.8 1.3 4.2 4"/>`,
   maletin:     `<rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M9 7.5V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5v2M3 13h18"/>`,
 };
@@ -424,7 +442,7 @@ function freshState() {
   for (const it of ITEMS) answers[it.id] = { a: "", b: [], aAt: null, bAt: null, aN: 0, bN: 0 };
   return {
     structure: STRUCTURE, step: 0, submissionId: uuid(), startedAt: new Date().toISOString(),
-    respondent: { company: "", role: "", email: "" }, answers, done: false,
+    respondent: { company: "", role: "", jobTitle: "", email: "" }, answers, opens: {}, openAt: {}, done: false,
   };
 }
 
@@ -437,6 +455,9 @@ function loadState() {
     const a = s.answers[it.id];
     if (!a || !relOk(a.a) || !Array.isArray(a.b) || !a.b.every(enfOk)) return freshState();
   }
+  if (!s.opens || typeof s.opens !== "object") s.opens = {};
+  if (!s.openAt || typeof s.openAt !== "object") s.openAt = {};
+  if (typeof s.respondent.jobTitle !== "string") s.respondent.jobTitle = "";
   s.step = Math.min(Math.max(0, s.step | 0), SECTIONS.length);
   return s;
 }
@@ -448,7 +469,7 @@ const save = () => store.set(K.state, state);
 
 const form = document.getElementById("survey");
 const screens = [];           // { node, hero, validate() }
-const TOTAL = SECTIONS.length + 1;
+const TOTAL = SECTIONS.length + 1;    // datos + secciones
 
 function setErr(node, msg) { node.textContent = msg || ""; }
 
@@ -478,6 +499,12 @@ function buildDatos() {
     return input;
   });
 
+  const job = h("input", { id: "f-job", name: "jobTitle", type: "text", autocomplete: "organization-title",
+    maxlength: "120", required: true, "aria-describedby": "e-job" });
+  job.value = r.jobTitle;
+  const eJob = h("p", { class: "err", id: "e-job", "aria-live": "polite" });
+  job.addEventListener("input", () => { r.jobTitle = job.value; save(); setErr(eJob); job.removeAttribute("aria-invalid"); });
+
   const email = h("input", { id: "f-email", name: "email", type: "email", autocomplete: "email", inputmode: "email",
     autocapitalize: "none", spellcheck: "false", maxlength: "160", required: true, "aria-describedby": "e-email" });
   email.value = r.email;
@@ -487,12 +514,13 @@ function buildDatos() {
   const node = h("section", { class: "screen", "data-screen": "datos", "aria-labelledby": "hero-title" },
     h("div", { class: "panel" },
       h("h2", { text: "Tus datos" }),
-      h("p", { class: "panel-lead", text: "Cuéntanos a qué organización perteneces y cuál es tu rol en ella." }),
+      h("p", { class: "panel-lead", text: "Cuéntanos a qué organización perteneces, cuál es tu rol y qué cargo ocupas." }),
       h("div", { class: "field" }, h("label", { for: "f-company", text: "Organización" }), company, eCompany),
       h("fieldset", { class: "field", "aria-describedby": "e-role" },
         h("legend", { text: "Rol" }),
         h("div", { class: "opts is-roles" }, ROLES.map((o, i) => optCard("radio", roleInputs[i], o))),
         eRole),
+      h("div", { class: "field" }, h("label", { for: "f-job", text: "Cargo" }), job, eJob),
       h("div", { class: "field" }, h("label", { for: "f-email", text: "Correo electrónico" }), email, eEmail)));
 
   function validate() {
@@ -501,6 +529,9 @@ function buildDatos() {
       setErr(eCompany, "Escribe el nombre de tu organización."); company.setAttribute("aria-invalid", "true"); bad.push(company);
     }
     if (!r.role) { setErr(eRole, "Selecciona tu rol."); bad.push(roleInputs[0]); }
+    if (r.jobTitle.trim().length < 2) {
+      setErr(eJob, "Escribe tu cargo."); job.setAttribute("aria-invalid", "true"); bad.push(job);
+    }
     const e = r.email.trim();
     if (!EMAIL_RE.test(e)) {
       setErr(eEmail, e ? "Revisa el correo: parece incompleto." : "Escribe tu correo electrónico.");
@@ -573,16 +604,47 @@ function buildSection(sec, si) {
     return card;
   });
 
-  const node = h("section", { class: "screen", "data-screen": `s${si + 1}`, "aria-labelledby": "hero-title", hidden: true }, buildGuide(si === 0), cards);
+  const open = buildOpen(si);
+  const node = h("section", { class: "screen", "data-screen": `s${si + 1}`, "aria-labelledby": "hero-title", hidden: true }, buildGuide(si === 0), cards, open.node);
 
   function validate() {
     const bad = checks.map(fn => fn()).filter(Boolean);
     const n = bad.length;
+    const openBad = open.check();
+    if (!n && openBad) return { focus: openBad, message: "Falta responder la pregunta abierta de esta sección." };
     return { focus: bad[0] || null, message: n ? (n === 1 ? "Falta responder 1 clase de esta sección." : `Faltan respuestas en ${n} clases de esta sección.`) : "" };
   }
   const hero = { num: String(si + 1), art: sec.art, kicker: `Módulo ${sec.module} de ${MODULES.length}`, kickerSr: `Sección ${si + 1} de ${SECTIONS.length}`,
     title: sec.title, sub: MODULES[sec.module - 1], small: true };
   return { node, hero, validate };
+}
+
+function buildOpen(si) {
+  const key = `s${si + 1}`;
+  const fid = `f-open-${key}`;
+  const field = h("textarea", { id: fid, name: `${key}_${OPEN.id}`, rows: "5", maxlength: String(OPEN.maxLength),
+    required: OPEN.required, "aria-describedby": `e-open-${key} ${fid}-count` });
+  field.value = state.opens[key] || "";
+  const count = h("p", { class: "count", id: `${fid}-count` });
+  const err = h("p", { class: "err", id: `e-open-${key}`, "aria-live": "polite" });
+  const sync = () => { count.textContent = `${field.value.length} de ${OPEN.maxLength} caracteres`; };
+  field.addEventListener("input", () => {
+    state.opens[key] = field.value; state.openAt[key] = new Date().toISOString(); save(); setErr(err); setErr(summaryErr); field.removeAttribute("aria-invalid"); sync();
+  });
+  sync();
+  const node = h("div", { class: "panel open-q" },
+    h("div", { class: "field" },
+      h("label", { for: fid }, h("span", { class: "open-k", text: "Pregunta abierta" }), OPEN.prompt,
+        !OPEN.required && h("span", { class: "opt-tag", text: " (opcional)" })),
+      field, count, err));
+  function check() {
+    if (OPEN.required && !(state.opens[key] || "").trim()) {
+      setErr(err, "Escribe tu respuesta."); field.setAttribute("aria-invalid", "true");
+      return field;
+    }
+    return null;
+  }
+  return { node, check };
 }
 
 const finBody = h("div", { class: "panel" });
@@ -672,13 +734,22 @@ function buildPayload() {
     const bLabels = a.b.map(enfLabel);
     answers.push({ questionId: `${it.id}_A`, index: ++index, type: "single_choice", prompt: `${RELEVANCIA.key}. ${RELEVANCIA.title}`,
       section: it.section, item: it.name, value: a.a, label: relLabel(a.a), answeredAt: a.aAt || iso, changed: Math.max(0, a.aN - 1) });
-    answers.push({ questionId: `${it.id}_B`, index: ++index, type: "multi_choice", prompt: `${ENFOQUE.key}. ${ENFOQUE.title}`,
+    answers.push({ questionId: `${it.id}_B`, index: ++index, type: "single_choice", prompt: `${ENFOQUE.key}. ${ENFOQUE.title}`,
       section: it.section, item: it.name, value: a.b.slice(), label: bLabels, answeredAt: a.bAt || iso, changed: Math.max(0, a.bN - 1) });
     flat[`${it.id}_A`] = relLabel(a.a);
     flat[`${it.id}_B`] = bLabels.join(" | ");
     items.push({ id: it.id, sectionIndex: it.sectionIndex, section: it.section, classIndex: it.classIndex, name: it.name,
       relevancia: a.a, relevanciaLabel: relLabel(a.a), enfoque: a.b.slice(), enfoqueLabels: bLabels });
   }
+
+  const openAnswers = SECTIONS.map((sec, si) => {
+    const key = `s${si + 1}`;
+    const value = (state.opens[key] || "").trim().slice(0, OPEN.maxLength);
+    answers.push({ questionId: `${key}_${OPEN.id}`, index: ++index, type: "open_text", prompt: OPEN.prompt,
+      section: `Sección ${si + 1} – ${sec.title}`, value, answeredAt: state.openAt[key] || iso });
+    flat[`${key}_${OPEN.id}`] = value;
+    return { sectionIndex: si + 1, section: `Sección ${si + 1} – ${sec.title}`, prompt: OPEN.prompt, value };
+  });
 
   const utm = {};
   try { new URLSearchParams(location.search).forEach((v, k) => { if (k.startsWith("utm_")) utm[k] = v.slice(0, 120); }); } catch {}
@@ -694,9 +765,10 @@ function buildPayload() {
     durationMs: Math.max(0, completedAt - new Date(state.startedAt)),
     locale: CFG.locale,
     respondent: { email: r.email.trim().toLowerCase(), name: null, externalId: null,
-      company: r.company.trim(), role: r.role, roleLabel: role ? role.label : "" },
+      company: r.company.trim(), role: r.role, roleLabel: role ? role.label : "", jobTitle: r.jobTitle.trim() },
     context: { utm, referrer: document.referrer || "", userAgent: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}` },
     answers, answersFlat: flat, items,
+    openAnswers,
   };
 }
 
